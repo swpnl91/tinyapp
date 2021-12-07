@@ -64,9 +64,18 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {  // for deleting
-    const urlId = req.params.shortURL;    //
-    delete urlDatabase[urlId];
-    res.redirect("/urls");
+  const urlId = req.params.shortURL;    //
+  delete urlDatabase[urlId];
+  res.redirect("/urls");
+});
+
+app.post("/urls/:id", (req, res) => {  // for editing/updating
+  const urlId = req.params.id;           // extracting id
+  const newLongUrl = req.body.newURL;    // extracting new/edited url submitted from the body (using .newURL because that's what it's named in url_show)
+
+  urlDatabase[urlId] = newLongUrl;      // assigning it as a value directly to the key in object/urlDatabase
+
+  res.redirect("/urls");
 });
 
 
