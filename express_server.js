@@ -36,31 +36,37 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = {urls: urlDatabase};
-  res.render("urls_index", templateVars);
+  const templateVars = {urls: urlDatabase};     // assigns existing object (urlDatabase) as a value to key urls in a new object
+  res.render("urls_index", templateVars);   // renders "urls_index" ejs & templateVars can be accessed in that file (See for.. in loop)
 });
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]/* What goes here? */ };
-  res.render("urls_show", templateVars);
+app.get("/urls/:shortURL", (req, res) => {    /// ????? what does it do?
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};   // params is parameters
+  res.render("urls_show", templateVars);  // renders "urls_show" ejs and templateVars can be accessed in the ejs file
 });
 
-app.get("/u/:shortURL", (req, res) => {
+app.get("/u/:shortURL", (req, res) => {   // anything after : is a wild card & can be accessed by req.params
   const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  res.redirect(longURL);    // for redirecting to the actual webpage using the shortURL
 });
 
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString(); 
-  const longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
+  const shortURL = generateRandomString();  // generating a random string using above function for shortURL
+  const longURL = req.body.longURL;       // body is what's being submitted via form/submit button
+  urlDatabase[shortURL] = longURL;        // assigning a new key-value pair in object (database)
   res.redirect(`/urls/${shortURL}`);
-  console.log(req.body);  // Log the POST request body to the console
+  console.log(req.body);  // Log the POST request body to the console  
   
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {  // for deleting
+    const urlId = req.params.shortURL;    //
+    delete urlDatabase[urlId];
+    res.redirect("/urls");
 });
 
 
