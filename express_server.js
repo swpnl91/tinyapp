@@ -45,15 +45,21 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+
+  const templateVars = {urls: urlDatabase, username: req.cookies["username"]};
+
+  res.render("urls_new", templateVars );
 });
 
 app.get("/urls/:shortURL", (req, res) => {    /// ????? what does it do?
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};   // params is parameters
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]};   // params is parameters
   res.render("urls_show", templateVars);  // renders "urls_show" ejs and templateVars can be accessed in the ejs file
 });
 
 app.get("/u/:shortURL", (req, res) => {   // anything after : is a wild card & can be accessed by req.params
+  
+  //const templateVars = {urls: urlDatabase, username: req.cookies["username"]}; <= doesn't go here because it redirects outside of tinyapp
+
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);    // for redirecting to the actual webpage using the shortURL
 });
@@ -90,10 +96,10 @@ app.post("/login", (req, res) => {
 
 });
 
-app.post('/logout', (req, res) => {
+app.post("/logout", (req, res) => {
   const username = req.body.username
-  res.clearCookie('username', username);
-  res.redirect('/urls');
+  res.clearCookie("username", username);
+  res.redirect("/url");
 });
 
 
