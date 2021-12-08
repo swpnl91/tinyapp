@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
@@ -20,6 +21,9 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
@@ -36,7 +40,7 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = {urls: urlDatabase};     // assigns existing object (urlDatabase) as a value to key urls in a new object
+  const templateVars = {urls: urlDatabase, username: req.cookies["username"]};     // assigns existing object (urlDatabase) as a value to key urls in a new object
   res.render("urls_index", templateVars);   // renders "urls_index" ejs & templateVars can be accessed in that file (See for.. in loop)
 });
 
@@ -76,6 +80,20 @@ app.post("/urls/:id", (req, res) => {  // for editing/updating
   urlDatabase[urlId] = newLongUrl;      // assigning it as a value directly to the key in object/urlDatabase
 
   res.redirect("/urls");
+});
+
+app.post("/login", (req, res) => {
+  
+  const userName = req.body.username;
+  res.cookie("username", userName);
+  res.redirect("/urls");
+
+});
+
+app.post('/logout', (req, res) => {
+  const username = req.body.username
+  res.clearCookie('username', username);
+  res.redirect('/urls');
 });
 
 
