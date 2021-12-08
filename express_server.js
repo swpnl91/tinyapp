@@ -35,13 +35,13 @@ const users = {
 }
 
 const findUser = (newEmail) => {
-  for (const user in users) {
-    if (users[user]["email"] === newEmail) {
-      return true;
-    } else {
-      return false;
+  for (const id in users) {
+    const user = users[id];
+    if (user["email"] === newEmail) {
+      return user;
     }
   }
+  return false;
 };
 
 
@@ -133,15 +133,30 @@ app.post("/urls/:id", (req, res) => {  // for editing/updating
 
 app.post("/login", (req, res) => {
   
-  const userName = req.body.username;
-  res.cookie("username", userName);
+  const email = req.body.email;
+  const password = req.body.password;
+  
+  //const userName = req.body.username;
+
+  const isUser = findUser(email);
+
+  if (!isUser) {
+    return res.status(403).send("Email address not found");
+  } 
+
+  if (isUser.password !== password) {
+    return res.status(403).send("Password doesn't match");
+  }
+
+  res.cookie("user_id", isUser.id);
+  // res.cookie("username", userName);
   res.redirect("/urls");
 
 });
 
 app.post("/logout", (req, res) => {
-  const username = req.body.username
-  res.clearCookie("username", username);
+  const id = req.body.user_id;
+  res.clearCookie("user_id", id);
   res.redirect("/urls");
 });
 
@@ -166,7 +181,6 @@ app.post("/register", (req, res) => {
   users[id] = {id, email, password}; 
 
   res.cookie("user_id", id);
-  console.log(users);
   
   res.redirect("urls");
 });
