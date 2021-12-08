@@ -21,6 +21,31 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "user1ID": {
+    id: "user1ID", 
+    email: "1@a.com", 
+    password: "123"
+  },
+ "user2ID": {
+    id: "user2ID", 
+    email: "2@a.com", 
+    password: "1234"
+  }
+}
+
+const findUser = (newEmail) => {
+  for (const user in users) {
+    if (users[user]["email"] === newEmail) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
+
+
+
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 
@@ -40,19 +65,21 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = {urls: urlDatabase, username: req.cookies["username"]};     // assigns existing object (urlDatabase) as a value to key urls in a new object
+  //const templateVars = {urls: urlDatabase, username: req.cookies["username"]};     // assigns existing object (urlDatabase) as a value to key urls in a new object
+  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
   res.render("urls_index", templateVars);   // renders "urls_index" ejs & templateVars can be accessed in that file (See for.. in loop)
 });
 
 app.get("/urls/new", (req, res) => {
 
-  const templateVars = {urls: urlDatabase, username: req.cookies["username"]};
-
+  //const templateVars = {urls: urlDatabase, username: req.cookies["username"]};
+  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
   res.render("urls_new", templateVars );
 });
 
 app.get("/urls/:shortURL", (req, res) => {    /// ????? what does it do?
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]};   // params is parameters
+  //const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]};   // params is parameters
+  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
   res.render("urls_show", templateVars);  // renders "urls_show" ejs and templateVars can be accessed in the ejs file
 });
 
@@ -65,9 +92,17 @@ app.get("/u/:shortURL", (req, res) => {   // anything after : is a wild card & c
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = {urls: urlDatabase, username: req.cookies["username"]};
+  //const templateVars = {urls: urlDatabase, username: req.cookies["username"]}; 
+  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
   res.render("register", templateVars);
 });
+
+app.get("/login", (req, res) => { 
+  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+  res.render("login", templateVars);
+});
+
+
 
 
 
@@ -108,6 +143,32 @@ app.post("/logout", (req, res) => {
   const username = req.body.username
   res.clearCookie("username", username);
   res.redirect("/urls");
+});
+
+
+app.post("/register", (req, res) => {
+  
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (!email || !password) {
+    return res.status(400).send("Email/Password cannot be blank!");
+  }
+
+  const isUser = findUser(email);
+
+  if (isUser) {
+    return res.status(400).send("Email address already registered");
+  }
+
+  const id = generateRandomString();
+
+  users[id] = {id, email, password}; 
+
+  res.cookie("user_id", id);
+  console.log(users);
+  
+  res.redirect("urls");
 });
 
 
