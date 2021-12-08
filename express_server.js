@@ -64,6 +64,14 @@ app.get("/u/:shortURL", (req, res) => {   // anything after : is a wild card & c
   res.redirect(longURL);    // for redirecting to the actual webpage using the shortURL
 });
 
+app.get("/register", (req, res) => {
+  const templateVars = {urls: urlDatabase, username: req.cookies["username"]};
+  res.render("register", templateVars);
+});
+
+
+
+
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();  // generating a random string using above function for shortURL
   const longURL = req.body.longURL;       // body is what's being submitted via form/submit button
