@@ -43,10 +43,11 @@
 
 
     <% } else { %>
-    <%= user["email"] %>
+   
 
 
     <form class="form-inline my-1" action="/logout" method="POST">
+      <%= user["email"] %>
       <div>
         <button type="submit" class="btn btn-dark ml-3">Logout</button>
       </div>

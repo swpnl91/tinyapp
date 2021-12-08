@@ -79,7 +79,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {    /// ????? what does it do?
   //const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]};   // params is parameters
-  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies.user_id]};
   res.render("urls_show", templateVars);  // renders "urls_show" ejs and templateVars can be accessed in the ejs file
 });
 
