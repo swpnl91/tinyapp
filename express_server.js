@@ -1,7 +1,11 @@
+const { findUser } = require('./helpers');
+
 const express = require("express");
 const app = express();
 
 const bcrypt = require("bcryptjs");
+const salt = bcrypt.genSaltSync(10);
+
 
 
 const PORT = 8080; // default port 8080
@@ -9,8 +13,14 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 
 
-const cookieParser = require("cookie-parser");
-app.use(cookieParser());
+// const cookieParser = require("cookie-parser");
+// app.use(cookieParser());
+
+const cookieSession = require("cookie-session");
+app.use(cookieSession ({
+  name: 'session',
+  keys: ['key1', 'key2']
+}));
 
 const bodyParser = require("body-parser");
 const { request } = require("express");
@@ -54,24 +64,24 @@ const users = {
   "user1ID": {
     id: "user1ID", 
     email: "1@a.com", 
-    password: "123"
+    password: bcrypt.hashSync('123', salt)
   },
  "user2ID": {
     id: "user2ID", 
     email: "2@a.com", 
-    password: "123"
+    password: bcrypt.hashSync('123', salt)
   }
 }
 
-const findUser = (newEmail) => {
-  for (const id in users) {
-    const user = users[id];
-    if (user["email"] === newEmail) {
-      return user;
-    }
-  }
-  return false;
-};
+// const findUser = (newEmail, users) => {
+//   for (const id in users) {
+//     const user = users[id];
+//     if (user["email"] === newEmail) {
+//       return user;
+//     }
+//   }
+//   return false;
+// };
 
 const urlsForUser = (id) => {
   const obj = {};
@@ -100,23 +110,36 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
 
-  if (!req.cookies.user_id) {
+  // if (!req.cookies.user_id) {
+  //   return res.status(403).send("You need to login/register to view the TinyURLs");
+  // }
+
+  if (!req.session.user_id) {
     return res.status(403).send("You need to login/register to view the TinyURLs");
   }
 
-  const obj = urlsForUser(req.cookies.user_id)
+  // const obj = urlsForUser(req.cookies.user_id);
+  const obj = urlsForUser(req.session.user_id);
   //const templateVars = {urls: urlDatabase, username: req.cookies["username"]};     // assigns existing object (urlDatabase) as a value to key urls in a new object
-  const templateVars = {urls: obj, user: users[req.cookies.user_id]};
+  // const templateVars = {urls: obj, user: users[req.cookies.user_id]};
+  const templateVars = {urls: obj, user: users[req.session.user_id]};
   res.render("urls_index", templateVars);   // renders "urls_index" ejs & templateVars can be accessed in that file (See for.. in loop)
 });
 
 app.get("/urls/new", (req, res) => {
 
-  if (!req.cookies.user_id) {
+  // if (!req.cookies.user_id) {
+  //   res.redirect("/login");
+  // }
+
+  if (!req.session.user_id) {
     res.redirect("/login");
   }
+
   //const templateVars = {urls: urlDatabase, username: req.cookies["username"]};
-  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+  // const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+
+  const templateVars = {urls: urlDatabase, user: users[req.session.user_id]};
   res.render("urls_new", templateVars );
 });
 
@@ -127,13 +150,20 @@ app.get("/urls/:shortURL", (req, res) => {    /// ????? what does it do?
   }
 
   const urlId = req.params.shortURL;
-  const cookieId = req.cookies.user_id;
+  // const cookieId = req.cookies.user_id;
+  const cookieId = req.session.user_id;
   
-  if (urlDatabase[urlId].userID !== String(req.cookies.user_id)) {
+  // if (urlDatabase[urlId].userID !== String(req.cookies.user_id)) {
+  //   return res.status(401).send("URL doesn't belong to user");
+  // }
+
+  if (urlDatabase[urlId].userID !== String(req.session.user_id)) {
     return res.status(401).send("URL doesn't belong to user");
   }
 
-  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id]};
+  // const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id]};
+
+  const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id]};
   res.render("urls_show", templateVars);  // renders "urls_show" ejs and templateVars can be accessed in the ejs file
 });
 
@@ -147,12 +177,16 @@ app.get("/u/:shortURL", (req, res) => {   // anything after : is a wild card & c
 
 app.get("/register", (req, res) => {
   //const templateVars = {urls: urlDatabase, username: req.cookies["username"]}; 
-  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+  // const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+
+  const templateVars = {urls: urlDatabase, user: users[req.session.user_id]};
   res.render("register", templateVars);
 });
 
 app.get("/login", (req, res) => { 
-  const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+  // const templateVars = {urls: urlDatabase, user: users[req.cookies.user_id]};
+
+  const templateVars = {urls: urlDatabase, user: users[req.session.user_id]};
   res.render("login", templateVars);
 });
 
@@ -163,13 +197,19 @@ app.get("/login", (req, res) => {
 
 app.post("/urls", (req, res) => {
   
-  if (!req.cookies.user_id) {
+  // if (!req.cookies.user_id) {
+  //   return res.status(403).send("You need to login to create/modify a TinyURL");
+  // }
+
+  if (!req.session.user_id) {
     return res.status(403).send("You need to login to create/modify a TinyURL");
   }
 
   const shortURL = generateRandomString();  // generating a random string using above function for shortURL
   const longURL = req.body.longURL;       // body is what's being submitted via form/submit button
-  urlDatabase[shortURL] = {longURL: longURL, userID: req.cookies.user_id};        // assigning a new key-value pair in object (database)
+  // urlDatabase[shortURL] = {longURL: longURL, userID: req.cookies.user_id};        // assigning a new key-value pair in object (database)
+  
+  urlDatabase[shortURL] = {longURL: longURL, userID: req.session.user_id};
   res.redirect(`/urls/${shortURL}`);
    
   
@@ -177,14 +217,23 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {  // for deleting
   
-  if (!req.cookies.user_id) {
+  // if (!req.cookies.user_id) {
+  //   return res.status(403).send("You need to login to create/modify a TinyURL");
+  // }
+
+  if (!req.session.user_id) {
     return res.status(403).send("You need to login to create/modify a TinyURL");
   }
 
   const url = req.params.shortURL;
-  const cookieId = req.cookies.user_id;
+  // const cookieId = req.cookies.user_id;
+  const cookieId = req.session.user_id;
   
-  if (urlDatabase[url].userID !== String(req.cookies.user_id)) {
+  // if (urlDatabase[url].userID !== String(req.cookies.user_id)) {
+  //   return res.status(401).send("URL doesn't belong to user");
+  // }
+
+  if (urlDatabase[url].userID !== String(req.session.user_id)) {
     return res.status(401).send("URL doesn't belong to user");
   }
 
@@ -197,17 +246,27 @@ app.post("/urls/:shortURL/delete", (req, res) => {  // for deleting
 
 app.post("/urls/:id", (req, res) => {  // for editing/updating
   
-  if (!req.cookies.user_id) {
+  // if (!req.cookies.user_id) {
+  //   return res.status(403).send("You need to login to create/modify a TinyURL");
+  // }
+
+  if (!req.session.user_id) {
     return res.status(403).send("You need to login to create/modify a TinyURL");
   }
 
   const url = req.params.id;
-  const cookieId = req.cookies.user_id;
+  // const cookieId = req.cookies.user_id;
+  const cookieId = req.session.user_id;
   
-  if (urlDatabase[url].userID !== String(req.cookies.user_id)) {
+  // if (urlDatabase[url].userID !== String(req.cookies.user_id)) {
+  //   return res.status(401).send("URL doesn't belong to user");
+  // }
+  
+  if (urlDatabase[url].userID !== req.session.user_id) {
     return res.status(401).send("URL doesn't belong to user");
   }
-  
+
+
   const urlId = req.params.id;           // extracting id
   const newLongUrl = req.body.newURL;    // extracting new/edited url submitted from the body (using .newURL because that's what it's named in url_show)
 
@@ -223,8 +282,11 @@ app.post("/login", (req, res) => {
   const hashedPassword = bcrypt.hashSync(password, 10);
   
   //const userName = req.body.username;
+  if (!email || !password) {
+    return res.status(400).send("Email/Password cannot be blank!");
+  }
 
-  const isUser = findUser(email);
+  const isUser = findUser(email, users);
 
   if (!isUser) {
     return res.status(400).send("Email address not found");
@@ -233,20 +295,24 @@ app.post("/login", (req, res) => {
   // if (isUser.password !== password) {
   //   return res.status(400).send("Password doesn't match");
   // }
+  
+  const result = bcrypt.compareSync(password, isUser.password);
 
-  if (!bcrypt.compareSync(password, isUser.password)) {
+  if (result) {
+    //res.cookie("user_id", isUser.id);
+    req.session.user_id = isUser.id;
+    // res.cookie("username", userName);
+    res.redirect("/urls"); 
+  } else {
     return res.status(400).send("Password doesn't match");
   }
-
-  res.cookie("user_id", isUser.id);
-  // res.cookie("username", userName);
-  res.redirect("/urls");
 
 });
 
 app.post("/logout", (req, res) => {
   const id = req.body.user_id;
-  res.clearCookie("user_id", id);
+  // res.clearCookie("user_id", id);
+  req.session = null;
   res.redirect("/urls");
 });
 
@@ -261,7 +327,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send("Email/Password cannot be blank!");
   }
 
-  const isUser = findUser(email);
+  const isUser = findUser(email, users);
 
   if (isUser) {
     return res.status(400).send("Email address already registered");
@@ -273,7 +339,8 @@ app.post("/register", (req, res) => {
 
   //console.log(users[id]);
 
-  res.cookie("user_id", id);
+  //res.cookie("user_id", id);
+  req.session.user_id = id;
   
   res.redirect("urls");
 });
