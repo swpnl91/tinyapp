@@ -95,7 +95,7 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
 
   if (!req.cookies.user_id) {
-    return res.status(404).send("You need to login/register to view the TinyURLs");
+    return res.status(403).send("You need to login/register to view the TinyURLs");
   }
 
   const obj = urlsForUser(req.cookies.user_id)
@@ -117,14 +117,14 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {    /// ????? what does it do?
   //const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]};   // params is parameters
   if (!urlDatabase[req.params.shortURL]) {
-    return res.status(403).send("id does not exist");
+    return res.status(404).send("id does not exist");
   }
 
   const urlId = req.params.shortURL;
   const cookieId = req.cookies.user_id;
   
   if (urlDatabase[urlId].userID !== String(req.cookies.user_id)) {
-    return res.status(403).send("URL doesn't belong to user");
+    return res.status(401).send("URL doesn't belong to user");
   }
 
   const templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id]};
@@ -158,7 +158,7 @@ app.get("/login", (req, res) => {
 app.post("/urls", (req, res) => {
   
   if (!req.cookies.user_id) {
-    return res.status(404).send("You need to login to create/modify a TinyURL");
+    return res.status(403).send("You need to login to create/modify a TinyURL");
   }
 
   const shortURL = generateRandomString();  // generating a random string using above function for shortURL
@@ -179,7 +179,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {  // for deleting
   const cookieId = req.cookies.user_id;
   
   if (urlDatabase[url].userID !== String(req.cookies.user_id)) {
-    return res.status(403).send("URL doesn't belong to user");
+    return res.status(401).send("URL doesn't belong to user");
   }
 
 
@@ -199,7 +199,7 @@ app.post("/urls/:id", (req, res) => {  // for editing/updating
   const cookieId = req.cookies.user_id;
   
   if (urlDatabase[url].userID !== String(req.cookies.user_id)) {
-    return res.status(403).send("URL doesn't belong to user");
+    return res.status(401).send("URL doesn't belong to user");
   }
   
   const urlId = req.params.id;           // extracting id
@@ -220,11 +220,11 @@ app.post("/login", (req, res) => {
   const isUser = findUser(email);
 
   if (!isUser) {
-    return res.status(403).send("Email address not found");
+    return res.status(400).send("Email address not found");
   } 
 
   if (isUser.password !== password) {
-    return res.status(403).send("Password doesn't match");
+    return res.status(400).send("Password doesn't match");
   }
 
   res.cookie("user_id", isUser.id);
