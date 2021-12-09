@@ -1,9 +1,24 @@
 const express = require("express");
 const app = express();
 
+const bcrypt = require("bcryptjs");
+
+
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
+
+
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
+const bodyParser = require("body-parser");
+const { request } = require("express");
+app.use(bodyParser.urlencoded({extended: true}));
+
+
+
+
 
 const generateRandomString = function() {
   let randomString = "";
@@ -67,15 +82,6 @@ const urlsForUser = (id) => {
   }
   return obj;
 };
-
-
-
-const cookieParser = require("cookie-parser");
-app.use(cookieParser());
-
-const bodyParser = require("body-parser");
-const { request } = require("express");
-app.use(bodyParser.urlencoded({extended: true}));
 
 
 
@@ -214,6 +220,7 @@ app.post("/login", (req, res) => {
   
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   
   //const userName = req.body.username;
 
@@ -223,7 +230,11 @@ app.post("/login", (req, res) => {
     return res.status(400).send("Email address not found");
   } 
 
-  if (isUser.password !== password) {
+  // if (isUser.password !== password) {
+  //   return res.status(400).send("Password doesn't match");
+  // }
+
+  if (!bcrypt.compareSync(password, isUser.password)) {
     return res.status(400).send("Password doesn't match");
   }
 
@@ -244,6 +255,7 @@ app.post("/register", (req, res) => {
   
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);   // hashing the password. hashSync is not normally used. Asynchronous is the way to go.
 
   if (!email || !password) {
     return res.status(400).send("Email/Password cannot be blank!");
@@ -257,7 +269,9 @@ app.post("/register", (req, res) => {
 
   const id = generateRandomString();
 
-  users[id] = {id, email, password}; 
+  users[id] = {id, email, "password": hashedPassword}; 
+
+  //console.log(users[id]);
 
   res.cookie("user_id", id);
   
